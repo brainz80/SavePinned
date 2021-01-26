@@ -81,7 +81,32 @@ var Sets = (function () {
 					window.location.href = "popup.html";
 				});
 			});
-        },
+		},
+		rename: function (id) {
+			swal({
+				text: 'Enter new name for tab set',
+				buttons: ['Cancel', 'Rename'],
+				content: {
+					attributes: { maxLength: 30, type: 'text' },
+					element: 'input',
+				}
+			}).then(function (name) {
+				if (!name) {
+					if (name !== null) Sets.rename(id);
+					return true;
+				}
+
+				browser.storage.sync.get(id).then(function (set) {
+					const setObj = Object.assign({}, set);
+
+					setObj[id].set_name = name;
+
+					browser.storage.sync.set(setObj).then(function () {
+						window.location.href = "popup.html";
+					});
+				});
+			});
+		},
         get: function () {
             browser.storage.sync.get(null).then(function (sets) {
                 var winid = windowId;
@@ -97,6 +122,7 @@ var Sets = (function () {
                                   '+(active === property ? '<button class="set-save">Save</button>' : '')+'\
               					<button class="set-load">Load</button>\
               					<button class="set-delete">Del</button>\
+              					<button class="set-rename">Ren</button>\
               				</div>';
               				var area = document.getElementById('load-area');
               				area.insertAdjacentHTML('beforeend', template);
@@ -130,6 +156,16 @@ var Sets = (function () {
             			deletebtns[j].addEventListener('click', function () {
             				var id = this.parentNode.dataset.id;
             				Sets.delete(id);
+            			});
+            		}
+
+
+            		// rename buttons
+            		var renamebtns = document.getElementsByClassName('set-rename');
+            		for (var j=0; j < renamebtns.length; j++) {
+            			renamebtns[j].addEventListener('click', function () {
+            				var id = this.parentNode.dataset.id;
+            				Sets.rename(id);
             			});
             		}
 
