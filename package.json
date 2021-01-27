@@ -1,0 +1,36 @@
+{
+  "name": "SavePinned",
+  "version": "1.0.0",
+  "description": "A chrome extension to save and load groups of pinned tabs",
+  "main": "background.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "clean": "rimraf dist/",
+    "build": "parcel build src/manifest.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jmakila/SavePinned.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jmakila/SavePinned/issues"
+  },
+  "homepage": "https://github.com/jmakila/SavePinned#readme",
+  "devDependencies": {
+    "cpx": "^1.5.0",
+    "parcel-bundler": "^1.12.4",
+    "parcel-plugin-web-extension": "^1.6.1",
+    "rimraf": "^3.0.2",
+    "sass": "^1.32.5",
+    "webextension-polyfill": "^0.7.0"
+  },
+  "dependencies": {
+    "file-saver": "^2.0.5",
+    "sweetalert": "^2.1.2"
+  }
+}

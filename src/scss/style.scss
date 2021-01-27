@@ -1,0 +1,169 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-size: 12pt;
+    font-family: Calibri;
+    color: #333;
+    width: 600px;
+    padding: 0.5em;
+}
+
+h2 {
+    font-size: 1.3em;
+    padding: 0.3em;
+    border-bottom: 1px solid darkgrey;
+
+    &:last-of-type {
+        margin-top: 1em;
+    }
+
+    span {
+        font-weight: normal;
+        font-style: italic;
+        color: #999;
+        float: right;
+        font-size: 0.8em;
+        line-height: 1.5em;
+    }
+}
+
+p {
+    padding: 0.5em;
+
+    &.save-row {
+        display: flex;
+    }
+}
+
+.load-row {
+    padding: 0.5em;
+    display: flex;
+    width: 100%;
+    border-bottom: 1px solid #eee;
+
+    &:last-of-type {
+        border-bottom: none;
+    }
+    &.active {
+        background-color: #f9f9f9;
+
+        span {
+            font-weight: bold;
+            width: 73%;
+        }
+    }
+
+    span {
+        font-size: 1.1em;
+        line-height: 1.8em;
+        height: 1.8em;
+        width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+    img {
+        float: right;
+        margin: 0.5em 0.5em 0.5em 1em;
+    }
+    label {
+        white-space: nowrap;
+        padding: 5px;
+
+        input {
+            vertical-align: -2px;
+        }
+    }
+}
+
+button {
+    font-size: 1em;
+    line-height: 2em;
+    height: 2em;
+    color: white;
+    background-color: lightslategrey;
+    border: none;
+    border-radius: 2px;
+    padding: 0 0.8em;
+    float: right;
+    margin-left: 0.5em;
+    outline: none;
+
+    &:active {
+        background-color: #af912c;
+    }
+    &.set-load {
+        background-color: #81c784;
+
+        &:hover {
+            background-color: #66bb6a;
+        }
+    }
+    &.set-save, &#save-button {
+        background-color: #4fc3f7;
+
+        &:hover {
+            background-color: #29b6f6;
+        }
+    }
+    &.set-delete {
+        background-color: #ff8a65;
+
+        &:hover {
+            background-color: #ff7043;
+        }
+    }
+}
+
+input#save-name {
+    font-size: 1em;
+    line-height: 2em;
+    height: 2em;
+    border: none;
+    border-radius: 2px;
+    background-color: #f0f0f0;
+    padding: 0 0.5em;
+    width: 100%;
+    outline: none;
+    float: left;
+}
+#load-area {
+    max-height: 300px;
+    overflow: auto;
+}
+#placeholder {
+    padding: 1em;
+    text-align: center;
+    font-style: italic;
+    color: #aaa;
+}
+
+/* Sweet Alert */
+.swal-button {
+    padding: 0 24px !important;
+    border-radius: 2px !important;
+    background-image: none !important;
+
+    &:hover {
+        color: white !important;
+    }
+}
+.swal-modal {
+    border-radius: 2px !important;
+
+    .swal-overlay--show-modal & {
+        animation: unset !important;
+    }
+}
+.confirm-delete-dialog {
+    .swal-button--confirm {
+        background-color: #ff8a65;
+
+        &:hover {
+            background-color: #ff7043;
+        }
+    }
+}

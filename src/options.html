@@ -4,7 +4,7 @@
   <head>
     <title>Save Pinned Tabs - Options</title>
     <meta charset="utf-8" />
-    <link href="style.css" rel="stylesheet">
+    <link href="scss/style.scss" rel="stylesheet">
     <style>
       .container {
         padding: 10px 20px 10px 20px;
@@ -16,7 +16,6 @@
         color: red;
       }
     </style>
-    <script src="lib/browser-polyfill.js"></script>
   </head>
 
   <body>
@@ -37,10 +36,7 @@
         <button id="import-button">Import</button>
       </div>
 
-      <script src="lib/FileSaver.min.js"></script>
-      <script src="lib/sweetalert.min.js"></script>
-      <script src="lib/validate_sets_schema.min.js"></script>
-      <script src="functions.js"></script>
+      <script src="vendor.js"></script>
       <script src="options.js"></script>
     </div>
   </body>
