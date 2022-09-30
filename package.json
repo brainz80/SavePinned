@@ -1,0 +1,33 @@
+{
+  "name": "SavePinned",
+  "version": "1.1.2",
+  "description": "A chrome extension to save and load groups of pinned tabs",
+  "scripts": {
+    "clean": "rimraf dist/",
+    "build": "parcel build src/manifest.json --config @parcel/config-webextension"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brainz80/SavePinned.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/brainz80/SavePinned/issues"
+  },
+  "homepage": "https://github.com/brainz80/SavePinned#readme",
+  "devDependencies": {
+    "@parcel/config-webextension": "^2.7.0",
+    "@parcel/transformer-sass": "^2.7.0",
+    "cpx": "^1.5.0",
+    "parcel": "^2.7.0",
+    "rimraf": "^3.0.2",
+    "sass": "^1.55.0"
+  },
+  "dependencies": {
+    "file-saver": "^2.0.5",
+    "sweetalert": "^2.1.2",
+    "webextension-polyfill": "^0.10.0"
+  }
+}
