@@ -18,12 +18,12 @@
   },
   "homepage": "https://github.com/brainz80/SavePinned#readme",
   "devDependencies": {
-    "@parcel/config-webextension": "^2.7.0",
-    "@parcel/transformer-sass": "^2.7.0",
+    "@parcel/config-webextension": "^2.8.3",
+    "@parcel/transformer-sass": "^2.8.3",
     "cpx": "^1.5.0",
-    "parcel": "^2.7.0",
-    "rimraf": "^3.0.2",
-    "sass": "^1.55.0"
+    "parcel": "^2.8.3",
+    "rimraf": "^4.1.2",
+    "sass": "^1.58.1"
   },
   "dependencies": {
     "file-saver": "^2.0.5",
