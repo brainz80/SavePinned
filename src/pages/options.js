@@ -1,4 +1,4 @@
-import Sets from './functions.js';
+import Sets from '../scripts/functions.js';
 
 var importInput = document.getElementById("import-input");
 

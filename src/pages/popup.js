@@ -1,4 +1,4 @@
-import Sets from './functions.js';
+import Sets from '../scripts/functions.js';
 
 const saveButton = document.getElementById('save-button');
 const saveName = document.getElementById('save-name');

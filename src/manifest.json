@@ -26,17 +26,17 @@
       "64": "images/icon_64.png",
       "32": "images/icon_32.png"
     },
-    "default_popup": "popup.html",
+    "default_popup": "pages/popup.html",
     "default_title": "Save pinned tabs"
   },
 
   "background": {
-    "scripts": ["background.js"],
+    "scripts": ["scripts/background.js"],
     "persistent": false
   },
 
   "options_ui": {
-    "page": "options.html",
+    "page": "pages/options.html",
     "browser_style": true,
     "open_in_tab": true
   }
