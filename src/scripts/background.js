@@ -6,7 +6,7 @@ import Sets from './functions.js';
 browser.storage.local.clear();
 
 browser.runtime.onStartup.addListener(() => {
-  browser.windows.getCurrent().then((win) => {
-    Sets.autoLoad(win.id);
-  });
+	browser.windows.getCurrent().then((win) => {
+		Sets.autoLoad(win.id);
+	});
 });
