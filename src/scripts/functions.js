@@ -1,43 +1,39 @@
 
-var Sets = (function () {
-	var windowId = null;
-	browser.windows.getCurrent().then(function (win) {
+import browser from 'webextension-polyfill';
+
+import popupPage from '../pages/popup.html';
+
+const Sets = (function () {
+	let windowId = null;
+
+	browser.windows.getCurrent().then(win => {
 		windowId = win.id;
 	});
 
-	var set_active = function (id, winid) {
+	function set_active (id, winid) {
 		browser.storage.local.get(['activeTabs']).then(function (result) {
 			var atabs = result.activeTabs || {};
 			atabs[winid] = id;
 			browser.storage.local.set({ 'activeTabs': atabs }).then(function () {
 				console.log('Active tabset for window ' + winid + ' is set to ' + id);
-				window.location.href = "popup.html";
+				window.location.href = popupPage;
 			});
 		});
 	}
 
 	return {
-		save: function (name, autoload) {
-			let urilist = [];
+		save (name, autoload) {
+			browser.tabs.query({ pinned: true, currentWindow: true }).then(tabs => {
+				if (tabs.length > 0) {
+					const uid = window.btoa(name);
 
-			browser.tabs.query({
-				pinned: true,
-				currentWindow: true
-			}).then(function (tabs) {
-				for (let i = 0; i < tabs.length; i++) {
-					urilist[i] = tabs[i].url;
-				}
-
-				if (urilist.length > 0) {
-					let saveObj = {}, uid = window.btoa(name);
-
-					saveObj[uid] = {
-						set_name: name,
-						autoload: autoload || 0,
-						tabs: urilist
-					};
-
-					browser.storage.sync.set(saveObj).then(() => {
+					browser.storage.sync.set({
+						[uid]: {
+							autoload: autoload || 0,
+							tabs: tabs.map(t => t.url),
+							set_name: name,
+						}
+					}).then(() => {
 						set_active(uid, windowId);
 					});
 				} else {
@@ -45,30 +41,21 @@ var Sets = (function () {
 				}
 			});
 		},
-		load: function (id, winid) {
-			browser.storage.sync.get(id).then(function (set) {
+		load (id, winid) {
+			browser.storage.sync.get(id).then(set => {
 				const { tabs } = set[id];
 
-				browser.tabs.query({
-					pinned: true,
-					windowId: winid
-				}).then(cutabs => {
-					let list = [];
+				browser.tabs.query({ pinned: true, windowId: winid }).then(cutabs => {
+					browser.tabs.remove(cutabs.map(t => t.id));
 
-					for (let index of cutabs) {
-						list.push(index.id);
-					}
-
-					browser.tabs.remove(list);
-
-					for (let index of tabs) {
+					tabs.forEach(index => {
 						browser.tabs.create({
 							windowId: winid,
 							url: index,
 							active: false,
 							pinned: true
 						});
-					}
+					});
 
 					console.log('Loaded tabs');
 
@@ -76,124 +63,129 @@ var Sets = (function () {
 				});
 			});
 		},
-		delete: function (id) {
+		delete (id) {
 			swal({
-				buttons: ['Cancel', 'Delete'],
-				className: 'confirm-delete-dialog',
 				text: "Do you really want to delete this tab set?",
-			}).then(function (conf) {
-				if (conf) browser.storage.sync.remove(id).then(function () {
-					window.location.href = "popup.html";
-				});
-			});
-		},
-		get: function () {
-			browser.storage.sync.get(null).then(function (sets) {
-				let winid = windowId;
-
-				browser.storage.local.get('activeTabs').then((result) => {
-					let active = result.activeTabs ? result.activeTabs[winid] : null;
-
-					for (let property in sets) {
-						if (sets.hasOwnProperty(property)) {
-							let row = sets[property];
-
-							let template = '\
-			  <div class="load-row '+ (active === property ? 'active' : '') + '" data-id="' + property + '" data-name="' + row.set_name + '" data-autoload="' + row.autoload + '">\
-			  <span>'+ row.set_name + '</span>\
-			  <label><input type="checkbox" name="autoload" class="autoload-radio" value="'+ property + '" ' + (row.autoload ? 'checked' : '') + '> Autoload</label>\
-			  '+ (active === property ? '<button class="set-save">Save</button>' : '') + '\
-			  <button class="set-load">Load</button>\
-			  <button class="set-delete">Del</button>\
-			  </div>';
-
-							let area = document.getElementById('load-area');
-							area.insertAdjacentHTML('beforeend', template);
-
-							const elRow = area.querySelector(`[data-id="${property}"]`);
-
-							const elAutoload = elRow.querySelector('.autoload-radio');
-							const elSave = elRow.querySelector('.set-save');
-							const elLoad = elRow.querySelector('.set-load');
-							const elDelete = elRow.querySelector('.set-delete');
-
-							if (elAutoload) elAutoload.addEventListener('click', ({ target: { checked, value } }) => {
-								if (checked) Sets.setAutoload(value);
-								else Sets.setAutoload(false);
-							});
-
-							if (elSave) elSave.addEventListener('click', () => {
-								let { autoload, name } = elRow.dataset;
-								Sets.save(name, autoload ? 1 : 0);
-							});
-
-							if (elLoad) elLoad.addEventListener('click', () => {
-								Sets.load(elRow.dataset.id, winid);
-							});
-
-							if (elDelete) elDelete.addEventListener('click', () => {
-								Sets.delete(elRow.dataset.id);
-							});
-
-							let plcelement = document.getElementById('placeholder')
-							if (plcelement) plcelement.remove();
-						}
-					}
-				});
-			});
-		},
-		setAutoload: function (id) {
-			browser.storage.sync.get(null).then(function (sets) {
-				for (var property in sets) {
-					if (sets.hasOwnProperty(property)) {
-						if (id && property == id) sets[property].autoload = 1;
-						else sets[property].autoload = 0;
-					}
+				className: 'confirm-delete-dialog',
+				buttons: ['Cancel', 'Delete'],
+			}).then(conf => {
+				if (conf) {
+					browser.storage.sync.remove(id).then(() => {
+						window.location.href = popupPage;
+					});
 				}
-				browser.storage.sync.set(sets).then(function () {
-					window.location.href = "popup.html";
+			});
+		},
+		rename (id) {
+			swal({
+				text: 'Enter new name for tab set',
+				content: {
+					attributes: { maxLength: 30, type: 'text' },
+					element: 'input',
+				},
+				buttons: ['Cancel', 'Rename'],
+			}).then(set_name => {
+				if (!set_name) {
+					if (set_name !== null) Sets.rename(id);
+					return true;
+				}
+
+				browser.storage.sync.get().then(sets => {
+					browser.storage.sync.set({ ...sets, [id]: { ...sets[id], set_name } }).then(() => {
+						window.location.href = popupPage;
+					});
 				});
 			});
 		},
-		clearActive: function (winid) {
+		get () {
+			browser.storage.sync.get().then(sets => {
+				browser.storage.local.get('activeTabs').then((result) => {
+					let active = result.activeTabs ? result.activeTabs[windowId] : null;
+
+					for (let [property, row] of Object.entries(sets)) {
+						const area = document.getElementById('load-area');
+
+						area.insertAdjacentHTML('beforeend', `<div class="load-row ${active === property ? 'active' : ''}" data-id="${property}" data-name="${row.set_name}" data-autoload="${row.autoload}">
+							<span>${row.set_name}</span>
+							<label><input type="checkbox" name="autoload" class="autoload-radio" value="${property}" ${row.autoload ? 'checked' : ''}> Autoload</label>
+							${active === property ? '<button class="set-save">Save</button>' : ''}
+							<button class="set-load">Load</button>
+							<button class="set-delete">Del</button>
+							<button class="set-rename">Ren</button>
+						</div>`);
+
+						const elRow = area.querySelector(`[data-id="${property}"]`);
+
+						elRow.querySelector('.autoload-radio')?.addEventListener('click', ({ target: { checked, value } }) => {
+							if (checked) Sets.setAutoload(value);
+							else Sets.setAutoload(false);
+						});
+
+						elRow.querySelector('.set-delete')?.addEventListener('click', () => {
+							Sets.delete(elRow.dataset.id);
+						});
+
+						elRow.querySelector('.set-load')?.addEventListener('click', () => {
+							Sets.load(elRow.dataset.id, windowId);
+						});
+
+						elRow.querySelector('.set-rename')?.addEventListener('click', () => {
+							Sets.rename(elRow.dataset.id);
+						});
+
+						elRow.querySelector('.set-save')?.addEventListener('click', () => {
+							let { autoload, name } = elRow.dataset;
+							Sets.save(name, autoload ? 1 : 0);
+						});
+
+						document.getElementById('placeholder')?.remove();
+					}
+				});
+			});
+		},
+		setAutoload (id) {
+			browser.storage.sync.get().then(sets => {
+				for (let [property, row] of Object.entries(sets)) {
+					row.autoload = (id && property == id) ? 1 : 0;
+				}
+				browser.storage.sync.set(sets).then(() => {
+					window.location.href = popupPage;
+				});
+			});
+		},
+		clearActive (winid) {
 			set_active(null, winid);
 		},
-		autoLoad: function (winid) {
-			browser.tabs.query({
-				pinned: true,
-				windowId: winid
-			}).then(function (cutabs) {
-				browser.storage.sync.get(null).then(function (sets) {
-					var autoloaded = false;
-					for (var property in sets) {
-						if (sets.hasOwnProperty(property)) {
-							var set = sets[property];
-							if (set.autoload == 1) { // there is a tab set to be autoloaded
-								console.log('Autoloading tabs');
-								autoloaded = true;
-								Sets.load(property, winid);
-								break;
-							}
+		autoLoad (winid) {
+			browser.tabs.query({ pinned: true, windowId: winid }).then(cutabs => {
+				browser.storage.sync.get().then(sets => {
+					let autoloaded = false;
+
+					for (let [property, row] of Object.entries(sets)) {
+						// there is a tab set to be autoloaded
+						if (row.autoload == 1) {
+							console.log('Autoloading tabs');
+							Sets.load(property, winid);
+							autoloaded = true;
+							break;
 						}
 					}
+
 					if (!autoloaded) Sets.clearActive(winid);
 				});
 			});
 		},
-		export: function () {
-			var fileName = "SavePinnedTabs_export_" + new Date().toISOString().replaceAll(/[.:]/g, "-") + '.json';
+		export () {
+			const fileName = `SavePinnedTabs_export_${new Date().toISOString().replaceAll(/[.:]/g, "-")}.json`;
 
-			return browser.storage.sync.get(null).then(function (sets) {
-				var fileText = JSON.stringify(sets);
-				var fileBlob = new Blob([fileText], { type: "application/json;charset=utf-8" });
+			return browser.storage.sync.get().then(sets => {
+				const fileText = JSON.stringify(sets);
+				const fileBlob = new Blob([fileText], { type: "application/json;charset=utf-8" });
 				saveAs(fileBlob, fileName);
 			});
 		},
-		import: function (sets) {
-			if (!validate20(sets)) {
-				return Promise.reject();
-			}
-
+		import (sets) {
+			if (!validate20(sets)) return Promise.reject();
 			return browser.storage.sync.set(sets);
 		},
 	}
