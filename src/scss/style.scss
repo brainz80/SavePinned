@@ -1,3 +1,5 @@
+@import 'modules/sweet-alert.scss';
+
 * {
 	box-sizing: border-box;
 	margin: 0;
@@ -62,6 +64,7 @@ p {
 		line-height: 1.8em;
 		height: 1.8em;
 		width: 100%;
+		text-overflow: ellipsis;
 		overflow: hidden;
 		white-space: nowrap;
 	}
@@ -139,31 +142,4 @@ input#save-name {
 	text-align: center;
 	font-style: italic;
 	color: #aaa;
-}
-
-/* Sweet Alert */
-.swal-button {
-	padding: 0 24px !important;
-	border-radius: 2px !important;
-	background-image: none !important;
-
-	&:hover {
-		color: white !important;
-	}
-}
-.swal-modal {
-	border-radius: 2px !important;
-
-	.swal-overlay--show-modal & {
-		animation: unset !important;
-	}
-}
-.confirm-delete-dialog {
-	.swal-button--confirm {
-		background-color: #ff8a65;
-
-		&:hover {
-			background-color: #ff7043;
-		}
-	}
 }
