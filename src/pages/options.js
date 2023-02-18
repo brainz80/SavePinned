@@ -1,9 +1,9 @@
-import Sets from '../scripts/functions.js';
+import { actionExport, actionImport } from '../scripts/functions.js';
 
 var importInput = document.getElementById("import-input");
 
 function notifyImportError() {
-	swal({
+	sweetalert({
 		text: "Failed to import tab sets. Please try again.",
 		icon: "error",
 	});
@@ -13,7 +13,7 @@ function notifyImportError() {
 
 function handleImport() {
 	if (!importInput.files[0]) {
-		swal({
+		sweetalert({
 			text: "Please select a file to import",
 			icon: "error",
 		});
@@ -21,36 +21,28 @@ function handleImport() {
 		return;
 	}
 
-	var reader = new FileReader();
+	const reader = new FileReader();
 
-	reader.onload = function () {
-		var importData = JSON.parse(reader.result);
-		Sets.import(importData)
-			.then(function () {
-				var importedCount = Object.keys(importData).length;
+	reader.addEventListener('error', notifyImportError);
+	reader.addEventListener('load', async ({ target }) => {
+		const importData = JSON.parse(target.result);
 
-				swal({
-					text: "Successfully Imported " + importedCount + " Tab Sets",
-				});
-
-				importInput.value = "";
-			})
-			.catch(notifyImportError);
-	};
-
-	reader.onerror = notifyImportError;
+		try {
+			await actionImport(importData);
+			sweetalert(`Successfully Imported ${Object.keys(importData).length} Tab Sets`);
+			importInput.value = "";
+		} catch (e) {
+			console.error(e);
+			notifyImportError();
+		}
+	});
 
 	reader.readAsText(importInput.files[0]);
 }
 
 function handleExport() {
-	Sets.export();
+	actionExport();
 }
 
-document
-	.getElementById("import-button")
-	.addEventListener("click", handleImport);
-
-document
-	.getElementById("export-button")
-	.addEventListener("click", handleExport);
+document.getElementById("import-button").addEventListener("click", handleImport);
+document.getElementById("export-button").addEventListener("click", handleExport);

@@ -4,8 +4,11 @@
   "description": "A chrome extension to save and load groups of pinned tabs",
   "scripts": {
     "clean": "rimraf dist/",
-    "build": "parcel build src/manifest.json --config @parcel/config-webextension",
-    "build:clean": "npm run clean && npm run build"
+    "build:schema": "ajv compile -s schema/sets.json -o validate_sets.js && browserify validate_sets.js -s validate20 -o src/scripts/validate_sets_schema.min.js && rimraf validate_sets.js",
+    "build:app": "parcel build src/manifest.json --config @parcel/config-webextension",
+    "build:clean": "npm run clean && npm run build:app",
+    "build": "npm run build:schema && npm run build:clean",
+    "watch": "parcel watch src/manifest.json --config @parcel/config-webextension"
   },
   "repository": {
     "type": "git",
@@ -21,6 +24,8 @@
   "devDependencies": {
     "@parcel/config-webextension": "^2.8.3",
     "@parcel/transformer-sass": "^2.8.3",
+    "ajv-cli": "^5.0.0",
+    "browserify": "^17.0.0",
     "cpx": "^1.5.0",
     "parcel": "^2.8.3",
     "rimraf": "^4.1.2",

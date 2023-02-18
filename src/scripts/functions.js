@@ -1,194 +1,220 @@
 
 import browser from 'webextension-polyfill';
+import sweetalert from 'sweetalert';
 
+import { saveAs } from 'file-saver';
+
+import validate from  './validate_sets_schema.min.js';
 import popupPage from '../pages/popup.html';
 
-const Sets = (function () {
-	let windowId = null;
+let windowId;
 
-	browser.windows.getCurrent().then(win => {
-		windowId = win.id;
+browser.windows.getCurrent().then(({ id }) => {
+	windowId = id;
+});
+
+async function setActive (id, windowId) {
+	const result = await browser.storage.local.get('activeTabs');
+
+	await browser.storage.local.set({
+		activeTabs: {
+			...result.activeTabs,
+			[windowId]: id,
+		}
 	});
 
-	function set_active (id, winid) {
-		browser.storage.local.get(['activeTabs']).then(function (result) {
-			var atabs = result.activeTabs || {};
-			atabs[winid] = id;
-			browser.storage.local.set({ 'activeTabs': atabs }).then(function () {
-				console.log('Active tabset for window ' + winid + ' is set to ' + id);
-				window.location.href = popupPage;
-			});
+	console.log(`Active tabset for window ${windowId} is set to ${id}`);
+
+	window.location.href = popupPage;
+}
+
+export async function actionSave (name, autoload) {
+	const tabs = await browser.tabs.query({ pinned: true, currentWindow: true });
+
+	if (!tabs.length > 0) {
+		await sweetalert({ text: "No pinned tabs found!", icon: "error" });
+		return;
+	}
+
+	const uid = window.btoa(name);
+
+	await browser.storage.sync.set({
+		[uid]: {
+			autoload: autoload || 0,
+			tabs: tabs.map(t => t.url),
+			set_name: name,
+		}
+	});
+
+	await setActive(uid, windowId);
+}
+
+export async function actionLoad (id, windowId) {
+	const [set, tabs] = await Promise.all([
+		browser.storage.sync.get(id),
+		browser.tabs.query({ windowId }),
+	]);
+
+	if (!tabs.some(t => !t.pinned)) {
+		await sweetalert("Unfortunately how this app is setup you'll currently need at least one unpinned tab to be able load the pinned tabs.");
+	} else {
+		const pinned = tabs.filter(t => t.pinned);
+
+		await browser.tabs.remove(pinned.map(t => t.id));
+
+		await Promise.all(set[id].tabs.map(url => {
+			return browser.tabs.create({ windowId, url, active: false, pinned: true });
+		}));
+
+		console.log('Loaded tabs');
+
+		await setActive(id, windowId);
+	}
+}
+
+export async function actionDelete (id) {
+	const confirmed = await sweetalert({
+		text: "Do you really want to delete this tab set?",
+		className: 'confirm-delete-dialog',
+		buttons: ['Cancel', 'Delete'],
+	})
+
+	if (!confirmed) return;
+
+	await browser.storage.sync.remove(id);
+
+	window.location.href = popupPage;
+}
+
+export async function actionRename (id) {
+	const set_name = await sweetalert({
+		text: 'Enter new name for tab set',
+		content: {
+			attributes: { maxLength: 30, type: 'text' },
+			element: 'input',
+		},
+		buttons: ['Cancel', 'Rename'],
+	});
+
+	if (!set_name) {
+		if (set_name !== null) await actionRename(id);
+		return;
+	}
+
+	const sets = await browser.storage.sync.get();
+
+	await browser.storage.sync.set({
+		...sets,
+		[id]: {
+			...sets[id],
+			set_name,
+		},
+	});
+
+	window.location.href = popupPage;
+}
+
+export async function actionGet () {
+	const [result, sets] = await Promise.all([
+		browser.storage.local.get('activeTabs'),
+		browser.storage.sync.get(),
+	]);
+
+	let active = result.activeTabs ? result.activeTabs[windowId] : null;
+
+	for (let [property, row] of Object.entries(sets)) {
+		const area = document.getElementById('load-area');
+
+		area.insertAdjacentHTML('beforeend', `<div class="load-row ${active === property ? 'active' : ''}" data-id="${property}" data-name="${row.set_name}" data-autoload="${row.autoload}">
+			<span>${row.set_name}</span>
+			<label><input type="checkbox" name="autoload" class="autoload-radio" value="${property}" ${row.autoload ? 'checked' : ''}> Autoload</label>
+			${active === property ? '<button class="set-save">Save</button>' : ''}
+			<button class="set-load">Load</button>
+			<button class="set-delete">Del</button>
+			<button class="set-rename">Ren</button>
+		</div>`);
+
+		const elRow = area.querySelector(`[data-id="${property}"]`);
+
+		elRow.querySelector('.autoload-radio')?.addEventListener('click', ({ target: { checked, value } }) => {
+			if (checked) setAutoload(value);
+			else setAutoload(false);
 		});
+
+		elRow.querySelector('.set-delete')?.addEventListener('click', () => {
+			actionDelete(elRow.dataset.id);
+		});
+
+		elRow.querySelector('.set-load')?.addEventListener('click', () => {
+			actionLoad(elRow.dataset.id, windowId);
+		});
+
+		elRow.querySelector('.set-rename')?.addEventListener('click', () => {
+			actionRename(elRow.dataset.id);
+		});
+
+		elRow.querySelector('.set-save')?.addEventListener('click', () => {
+			let { autoload, name } = elRow.dataset;
+			actionSave(name, autoload ? 1 : 0);
+		});
+
+		document.getElementById('placeholder')?.remove();
+	}
+}
+
+export async function setAutoload (id) {
+	const sets = await browser.storage.sync.get();
+
+	for (let [property, row] of Object.entries(sets)) {
+		row.autoload = (id && property == id) ? 1 : 0;
 	}
 
-	return {
-		save (name, autoload) {
-			browser.tabs.query({ pinned: true, currentWindow: true }).then(tabs => {
-				if (tabs.length > 0) {
-					const uid = window.btoa(name);
+	await browser.storage.sync.set(sets);
 
-					browser.storage.sync.set({
-						[uid]: {
-							autoload: autoload || 0,
-							tabs: tabs.map(t => t.url),
-							set_name: name,
-						}
-					}).then(() => {
-						set_active(uid, windowId);
-					});
-				} else {
-					console.log('No pinned tabs found!');
-				}
-			});
-		},
-		load (id, winid) {
-			browser.storage.sync.get(id).then(set => {
-				const { tabs } = set[id];
+	window.location.href = popupPage;
+}
 
-				browser.tabs.query({ pinned: true, windowId: winid }).then(cutabs => {
-					browser.tabs.remove(cutabs.map(t => t.id));
+export async function clearActive (winid) {
+	await setActive(null, winid);
+}
 
-					tabs.forEach(index => {
-						browser.tabs.create({
-							windowId: winid,
-							url: index,
-							active: false,
-							pinned: true
-						});
-					});
+export async function autoload (winid) {
+	const [cutabs, sets] = await Promise.all([
+		browser.tabs.query({ pinned: true, windowId: winid }),
+		browser.storage.sync.get(),
+	]);
 
-					console.log('Loaded tabs');
+	let autoloaded = false;
 
-					set_active(id, winid);
-				});
-			});
-		},
-		delete (id) {
-			swal({
-				text: "Do you really want to delete this tab set?",
-				className: 'confirm-delete-dialog',
-				buttons: ['Cancel', 'Delete'],
-			}).then(conf => {
-				if (conf) {
-					browser.storage.sync.remove(id).then(() => {
-						window.location.href = popupPage;
-					});
-				}
-			});
-		},
-		rename (id) {
-			swal({
-				text: 'Enter new name for tab set',
-				content: {
-					attributes: { maxLength: 30, type: 'text' },
-					element: 'input',
-				},
-				buttons: ['Cancel', 'Rename'],
-			}).then(set_name => {
-				if (!set_name) {
-					if (set_name !== null) Sets.rename(id);
-					return true;
-				}
-
-				browser.storage.sync.get().then(sets => {
-					browser.storage.sync.set({ ...sets, [id]: { ...sets[id], set_name } }).then(() => {
-						window.location.href = popupPage;
-					});
-				});
-			});
-		},
-		get () {
-			browser.storage.sync.get().then(sets => {
-				browser.storage.local.get('activeTabs').then((result) => {
-					let active = result.activeTabs ? result.activeTabs[windowId] : null;
-
-					for (let [property, row] of Object.entries(sets)) {
-						const area = document.getElementById('load-area');
-
-						area.insertAdjacentHTML('beforeend', `<div class="load-row ${active === property ? 'active' : ''}" data-id="${property}" data-name="${row.set_name}" data-autoload="${row.autoload}">
-							<span>${row.set_name}</span>
-							<label><input type="checkbox" name="autoload" class="autoload-radio" value="${property}" ${row.autoload ? 'checked' : ''}> Autoload</label>
-							${active === property ? '<button class="set-save">Save</button>' : ''}
-							<button class="set-load">Load</button>
-							<button class="set-delete">Del</button>
-							<button class="set-rename">Ren</button>
-						</div>`);
-
-						const elRow = area.querySelector(`[data-id="${property}"]`);
-
-						elRow.querySelector('.autoload-radio')?.addEventListener('click', ({ target: { checked, value } }) => {
-							if (checked) Sets.setAutoload(value);
-							else Sets.setAutoload(false);
-						});
-
-						elRow.querySelector('.set-delete')?.addEventListener('click', () => {
-							Sets.delete(elRow.dataset.id);
-						});
-
-						elRow.querySelector('.set-load')?.addEventListener('click', () => {
-							Sets.load(elRow.dataset.id, windowId);
-						});
-
-						elRow.querySelector('.set-rename')?.addEventListener('click', () => {
-							Sets.rename(elRow.dataset.id);
-						});
-
-						elRow.querySelector('.set-save')?.addEventListener('click', () => {
-							let { autoload, name } = elRow.dataset;
-							Sets.save(name, autoload ? 1 : 0);
-						});
-
-						document.getElementById('placeholder')?.remove();
-					}
-				});
-			});
-		},
-		setAutoload (id) {
-			browser.storage.sync.get().then(sets => {
-				for (let [property, row] of Object.entries(sets)) {
-					row.autoload = (id && property == id) ? 1 : 0;
-				}
-				browser.storage.sync.set(sets).then(() => {
-					window.location.href = popupPage;
-				});
-			});
-		},
-		clearActive (winid) {
-			set_active(null, winid);
-		},
-		autoLoad (winid) {
-			browser.tabs.query({ pinned: true, windowId: winid }).then(cutabs => {
-				browser.storage.sync.get().then(sets => {
-					let autoloaded = false;
-
-					for (let [property, row] of Object.entries(sets)) {
-						// there is a tab set to be autoloaded
-						if (row.autoload == 1) {
-							console.log('Autoloading tabs');
-							Sets.load(property, winid);
-							autoloaded = true;
-							break;
-						}
-					}
-
-					if (!autoloaded) Sets.clearActive(winid);
-				});
-			});
-		},
-		export () {
-			const fileName = `SavePinnedTabs_export_${new Date().toISOString().replaceAll(/[.:]/g, "-")}.json`;
-
-			return browser.storage.sync.get().then(sets => {
-				const fileText = JSON.stringify(sets);
-				const fileBlob = new Blob([fileText], { type: "application/json;charset=utf-8" });
-				saveAs(fileBlob, fileName);
-			});
-		},
-		import (sets) {
-			if (!validate20(sets)) return Promise.reject();
-			return browser.storage.sync.set(sets);
-		},
+	for (let [property, row] of Object.entries(sets)) {
+		// there is a tab set to be autoloaded
+		if (row.autoload == 1) {
+			console.log('Autoloading tabs');
+			await actionLoad(property, winid);
+			autoloaded = true;
+			break;
+		}
 	}
-})();
 
-export default Sets;
+	if (!autoloaded) {
+		await clearActive(winid);
+	}
+}
+
+export function actionExport () {
+	const fileName = `SavePinnedTabs_export_${new Date().toISOString().replaceAll(/[.:]/g, "-")}.json`;
+
+	return browser.storage.sync.get().then(sets => {
+		const fileText = JSON.stringify(sets);
+		const fileBlob = new Blob([fileText], { type: "application/json;charset=utf-8" });
+		saveAs(fileBlob, fileName);
+	});
+}
+
+export function actionImport (sets) {
+	if (!validate(sets)) {
+		return Promise.reject(validate.errors);
+	}
+
+	return browser.storage.sync.set(sets);
+}

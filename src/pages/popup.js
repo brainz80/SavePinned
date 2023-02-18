@@ -1,17 +1,19 @@
-import Sets from '../scripts/functions.js';
+import { actionGet, actionSave } from '../scripts/functions.js';
 
 const saveButton = document.getElementById('save-button');
 const saveName = document.getElementById('save-name');
 
 saveButton.addEventListener('click', () => {
-	if (saveName.value) Sets.save(saveName.value);
-});
-
-saveName.addEventListener('keydown', (event) => {
-	if (event.key === 'Enter') {
-		if (saveName.value) Sets.save(saveName.value);
+	if (saveName.value) {
+		actionSave(saveName.value);
 	}
 });
 
-document.addEventListener('DOMContentLoaded', Sets.get);
+saveName.addEventListener('keydown', (event) => {
+	if (saveName.value && event.key === 'Enter') {
+		actionSave(saveName.value);
+	}
+});
+
+document.addEventListener('DOMContentLoaded', actionGet);
 saveName.focus();
