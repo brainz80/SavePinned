@@ -1,23 +1,16 @@
 import { actionExport, actionImport } from '../scripts/functions.js';
+import sweetalert from 'sweetalert';
 
-var importInput = document.getElementById("import-input");
+const importInput = document.getElementById("import-input");
 
-function notifyImportError() {
-	sweetalert({
-		text: "Failed to import tab sets. Please try again.",
-		icon: "error",
-	});
-
+async function notifyImportError() {
+	await sweetalert({ text: "Failed to import tab sets. Please try again.", icon: "error" });
 	importInput.value = "";
 }
 
-function handleImport() {
+async function handleImport() {
 	if (!importInput.files[0]) {
-		sweetalert({
-			text: "Please select a file to import",
-			icon: "error",
-		});
-
+		await sweetalert({ text: "Please select a file to import", icon: "error" });
 		return;
 	}
 
@@ -40,8 +33,8 @@ function handleImport() {
 	reader.readAsText(importInput.files[0]);
 }
 
-function handleExport() {
-	actionExport();
+async function handleExport() {
+	await actionExport();
 }
 
 document.getElementById("import-button").addEventListener("click", handleImport);
