@@ -1,6 +1,6 @@
 
 import browser from 'webextension-polyfill';
-import sweetalert from 'sweetalert';
+import Swal from 'sweetalert';
 
 import { saveAs } from 'file-saver';
 
@@ -32,7 +32,7 @@ export async function actionSave (name, autoload) {
 	const tabs = await browser.tabs.query({ pinned: true, currentWindow: true });
 
 	if (!tabs.length > 0) {
-		await sweetalert({ text: "No pinned tabs found!", icon: "error" });
+		await Swal({ text: "No pinned tabs found!", icon: "error" });
 		return;
 	}
 
@@ -56,7 +56,7 @@ export async function actionLoad (id, windowId) {
 	]);
 
 	if (!tabs.some(t => !t.pinned)) {
-		await sweetalert("Unfortunately how this app is setup you'll currently need at least one unpinned tab to be able load the pinned tabs.");
+		await Swal("Unfortunately how this app is setup you'll currently need at least one unpinned tab to be able load the pinned tabs.");
 	} else {
 		const pinned = tabs.filter(t => t.pinned);
 
@@ -73,7 +73,7 @@ export async function actionLoad (id, windowId) {
 }
 
 export async function actionDelete (id) {
-	const confirmed = await sweetalert({
+	const confirmed = await Swal({
 		text: "Do you really want to delete this tab set?",
 		className: 'confirm-delete-dialog',
 		buttons: ['Cancel', 'Delete'],
@@ -87,7 +87,7 @@ export async function actionDelete (id) {
 }
 
 export async function actionRename (id) {
-	const set_name = await sweetalert({
+	const set_name = await Swal({
 		text: 'Enter new name for tab set',
 		content: {
 			attributes: { maxLength: 30, type: 'text' },
