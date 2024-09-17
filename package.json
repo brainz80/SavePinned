@@ -32,6 +32,6 @@
   "dependencies": {
     "file-saver": "^2.0.5",
     "sweetalert": "^2.1.2",
-    "webextension-polyfill": "^0.10.0"
+    "webextension-polyfill": "^0.12.0"
   }
 }
