@@ -27,7 +27,7 @@
     "ajv-cli": "^5.0.0",
     "parcel": "^2.8.3",
     "rimraf": "^5.0.0",
-    "sass": "^1.58.1"
+    "sass": "^1.78.0"
   },
   "dependencies": {
     "file-saver": "^2.0.5",
